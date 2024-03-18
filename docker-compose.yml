@@ -7,6 +7,8 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     networks:
       - net
+    ports:
+      - 3000:3000
   db:
     image: postgres:16.2-alpine3.19
     container_name: db

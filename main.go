@@ -1,10 +1,7 @@
 package main
 
-import Db "shitblog-server/db"
-import "fmt"
+import "shitblog-server/server"
 
 func main() {
-	db := Db.ConnectToDb()
-	Db.RecreateTables(db)
-	fmt.Println(Db.CreateUser("proggerx", db))
+	server.StartServer()
 }
