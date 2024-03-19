@@ -4,11 +4,11 @@ import (
 	"os"
 	"fmt"
 	"database/sql"
+	"github.com/google/uuid"
 	"shitblog-server/utils"
 	"strings"
 	_ "github.com/lib/pq"
 	"strconv"
-	"golang.org/x/crypto/bcrypt"
 	"crypto/md5"
 )
 
@@ -19,10 +19,9 @@ const (
     dbname   = "blog"
 )
 
-func generateTokenFromUsername(username string) string {
-	token, err := bcrypt.GenerateFromPassword([]byte(username), bcrypt.DefaultCost)
-	utils.PanicIfError(err)
-	return string(token)
+func generateToken() string {
+	token, _ := uuid.NewRandom()
+	return token.String()
 }
 
 func ConnectToDb() *sql.DB {
@@ -59,7 +58,7 @@ func CreateUser(username string) string {
 	if res.Next() {
 		return "username taken"
 	}
-	token := generateTokenFromUsername(username)
+	token := generateToken()
 	hash := md5.Sum([]byte(token))
 	_, err = db.Exec("INSERT INTO users (username, token) VALUES ('" + username + "', '" + fmt.Sprintf("%x", hash) + "')")
 	utils.PanicIfError(err)
