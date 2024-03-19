@@ -64,7 +64,7 @@ func createPost(c *fiber.Ctx) error {
 		fmt.Println("DB error")
 		return c.SendStatus(400)
 	}
-	return c.SendStatus(200)
+	return c.SendString(fmt.Sprint(res))
 }
 
 func deletePost(c *fiber.Ctx) error {

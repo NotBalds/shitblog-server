@@ -7,6 +7,7 @@ import (
 	"shitblog-server/utils"
 	"strings"
 	_ "github.com/lib/pq"
+	"strconv"
 	"golang.org/x/crypto/bcrypt"
 	"crypto/md5"
 )
@@ -101,7 +102,7 @@ func GetUsers() []string {
 	return ret
 }
 
-func CreatePost(token string, title string, text string) int {
+func CreatePost(token string, title string, text string) uint64 {
 	db := ConnectToDb()
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(token)))
 	res, err := db.Query("SELECT * FROM users WHERE token='" + hash + "'")
@@ -114,7 +115,13 @@ func CreatePost(token string, title string, text string) int {
 	utils.PanicIfError(err)
 	_, err = db.Exec("INSERT INTO posts (author, title, text) VALUES ('" + author + "', '" + title  + "', '" + text + "')")
 	utils.PanicIfError(err)
-	return 0
+	r, err := db.Query("SELECT * FROM posts ORDER BY id DESC LIMIT 1")
+	var a, ti, te, strid string
+	r.Next()
+	err = r.Scan(&strid, &a, &ti, &te)
+	utils.PanicIfError(err)
+	id, _ := strconv.ParseUint(strid, 10, 64)
+	return id
 }
 
 func GetPosts(count int, author string) []map[string]string {
