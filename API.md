@@ -16,8 +16,7 @@ Responses:
 ```
 Responses:
 200 - post created
-400 - incorrect request (not all fields)
-401 - incorrect token
+400 - incorrect request (not all fields) or no such user or incorrect token
 
 - ```DELETE /api/user/<username>``` - delete user, params:
 ```json
@@ -37,12 +36,18 @@ Responses:
 }
 ```
 Responses:
-200 - post deleted
+200 - post deleted or no such post or not deleted because you are not owner
 400 - incorrect request (not all fields)
 401 - incorrect token
 
 - ```GET /api/user/``` - get all users (usernames)
 
-- ```GET /api/post/``` - get all posts
+- ```GET /api/post/``` - get posts, params:
+```json
+{
+    "count": "how many posts, required param",
+    "author": "Author of posts, optional param"
+}
+```
 
 - ```GET /api/post/<id>``` - get post by id

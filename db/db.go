@@ -44,7 +44,7 @@ func RecreateTables() {
 	utils.PanicIfError(err)
 	_, err = db.Exec("CREATE TABLE users (username TEXT, token TEXT)")
 	utils.PanicIfError(err)
-	_, err = db.Exec("CREATE TABLE posts (id BIGSERIAL PRIMARY KEY, title TEXT, text TEXT)")
+	_, err = db.Exec("CREATE TABLE posts (id BIGSERIAL PRIMARY KEY, author TEXT, title TEXT, text TEXT)")
 	utils.PanicIfError(err)
 }
 
@@ -99,4 +99,81 @@ func GetUsers() []string {
 		ret = append(ret, username)
 	}
 	return ret
+}
+
+func CreatePost(token string, title string, text string) int {
+	db := ConnectToDb()
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(token)))
+	res, err := db.Query("SELECT * FROM users WHERE token='" + hash + "'")
+	utils.PanicIfError(err)
+	if !res.Next() {
+		return 1
+	}
+	var author, tok string
+	err = res.Scan(&author, &tok)
+	utils.PanicIfError(err)
+	_, err = db.Exec("INSERT INTO posts (author, title, text) VALUES ('" + author + "', '" + title  + "', '" + text + "')")
+	utils.PanicIfError(err)
+	return 0
+}
+
+func GetPosts(count int, author string) []map[string]string {
+	var ret []map[string]string
+	db := ConnectToDb()
+	var res *sql.Rows
+	var err error
+	if author == "" {
+		res, err = db.Query("SELECT * FROM posts ORDER BY ID DESC LIMIT " + fmt.Sprint(count))
+	} else {
+		res, err = db.Query("SELECT * FROM posts WHERE author = '" + author + "' ORDER BY ID DESC LIMIT " + fmt.Sprint(count))
+	}
+	utils.PanicIfError(err)
+	for res.Next() {
+		cur := make(map[string]string)
+		var id, author, title, text string
+		err := res.Scan(&id, &author, &title, &text)
+		utils.PanicIfError(err)
+		cur["id"] = id
+		cur["author"] = author
+		cur["title"] = title
+		cur["text"] = text
+		ret = append(ret, cur)
+	}
+	return ret
+}
+
+func GetPost(id uint64) map[string]string {
+	db := ConnectToDb()
+	res, err := db.Query("SELECT * FROM posts WHERE id = '" + fmt.Sprint(id) + "'")
+	utils.PanicIfError(err)
+	if !res.Next() {
+		return nil
+	}
+	var author, title, text string;
+	err = res.Scan(&id, &author, &title, &text)
+	ret := make(map[string]string)
+	ret["id"] = fmt.Sprint(id)
+	ret["author"] = author
+	ret["title"] = title
+	ret["text"] = text
+	return ret
+}
+
+func DeletePost(token string, id uint64) int {
+	db := ConnectToDb()
+	var username, correct_hash string
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(token)))
+	res, err := db.Query("SELECT * FROM users WHERE token='" + hash + "'")
+	utils.PanicIfError(err)
+	if !res.Next() {
+		return 2
+	}
+	err = res.Scan(&username, &correct_hash)
+	utils.PanicIfError(err)
+	if correct_hash != hash {
+		return 2
+	}
+	_, err = db.Exec("DELETE FROM posts WHERE id = '" + fmt.Sprint(id) + "' AND author = '" + username + "'")
+	utils.PanicIfError(err)
+	return 0
 }

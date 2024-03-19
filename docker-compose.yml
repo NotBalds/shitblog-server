@@ -2,13 +2,18 @@ services:
   server:
     image: shitblog-server
     container_name: server
+    depends_on:
+      db:
+        condition: service_healthy
     # restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-    networks:
-      - net
     ports:
       - 3000:3000
+    volumes:
+      - ./storage/server-storage:/go
+    build: 
+      context: .
   db:
     image: postgres:16.2-alpine3.19
     container_name: db
@@ -17,10 +22,10 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_USER=blogger
       - POSTGRES_DB=blog
-    networks:
-      net:
-        aliases:
-          - db
-
-networks:
-  net:
+    volumes:
+      - ./storage/db-storage:/var/lib/postgresql/data
+    healthcheck:
+      test : ["CMD-SHELL", "pg_isready --username=blogger --dbname=blog"]
+      interval: 5s
+      timeout: 2s
+      retries: 7
